@@ -35,6 +35,46 @@ def executar_query(query, parametros):
     else:
         return "Conexão com o banco de dados não foi estabelecida."
     
+def executar_query_freq(query, parametros):
+    conn = connect_db()
+    try:
+        cur = conn.cursor()
+        cur.execute(query, parametros)
+        if query.strip().upper().startswith('SELECT'):
+            resultados = cur.fetchall() 
+            return resultados
+        else:
+            conn.commit()
+            return cur.rowcount
+    except Exception as e:
+        print(f"Erro ao executar query: {e}")
+        conn.rollback()
+        return []
+    finally:
+        cur.close()
+        conn.close()
+
+
+def last_id():
+    conn = connect_db()
+    try:
+        cur = conn.cursor()
+
+        query = "SELECT id_aluno FROM identificacao_aluno ORDER BY id_aluno DESC LIMIT 1;"
+        cur.execute(query)
+
+        result = cur.fetchone()
+        last_id_aluno = result[0] if result else None
+
+        cur.close()
+        conn.close()
+
+        return last_id_aluno
+
+    except Exception as e:
+        print(f"Erro ao conectar ao banco de dados: {e}")
+        return None
+
 def insert_cadastro_sistema(login,nome_prof,senha):
     query = """INSERT INTO usuarios (login, nome_professor, senha) VALUES (%s, %s, %s)"""
 
@@ -49,7 +89,7 @@ def insert_identificacao_aluno(nis, nome_aluno, sexo_aluno, nascimento_uf, nasci
         INSERT INTO identificacao_aluno 
         (NIS, nome_aluno, sexo, UF, local_nascimento_municipio,
          uf_cartorio, nome_cartorio, data_expedicao_identidade,
-         orgao_emissor, uf_identidade, cpf, aluno_raca, municipio_cartorio)
+         orgao_emissor, uf_identidade, cpf, aluno_raca, municipio_cartório)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     parametros = (nis, nome_aluno, sexo_aluno, nascimento_uf, nascimento_municipio,
@@ -62,10 +102,10 @@ def insert_certidao(num_matricula_registro_civil, num_termo, livro, folha, data_
 
     query = """
         INSERT INTO certidao 
-        (num_matricula_registro_civil, num_termo, livro, folha, data_expedicao_certidao)
-        VALUES ( %s, %s, %s, %s,%s)
+        (id_aluno, num_matricula_registro_civil, num_termo, livro, folha, data_expedicao_certidao)
+        VALUES ( %s, %s, %s, %s, %s,%s)
     """
-    parametros = (num_matricula_registro_civil, num_termo, livro, folha, data_expedicao_certidao)
+    parametros = (last_id(), num_matricula_registro_civil, num_termo, livro, folha, data_expedicao_certidao)
     return executar_query(query, parametros)
 
 
@@ -73,12 +113,12 @@ def insert_saude(autismo, rett, asperger, transtorno_desintegrativo,
                  baixa_visao, cegueira, auditiva, intelectual, fisica,
                  multipla, sindrome_down, surdez, surdocegueira, altas_habilidades):
     query = """
-        INSERT INTO saude (autismo, rett, asperger, transtorno_desintegrativo,
+        INSERT INTO saude (id_aluno, autismo, rett, asperger, transtorno_desintegrativo,
                                        baixa_visao, cegueira, auditiva, intelectual, fisica,
                                        multipla, sindrome_down, surdez, surdocegueira, altas_habilidades)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
-    parametros = (autismo, rett, asperger, transtorno_desintegrativo,
+    parametros = (last_id(),autismo, rett, asperger, transtorno_desintegrativo,
                       baixa_visao, cegueira, auditiva, intelectual, fisica,
                       multipla, sindrome_down, surdez, surdocegueira, altas_habilidades)
     return executar_query(query, parametros)
@@ -87,20 +127,20 @@ def insert_saude(autismo, rett, asperger, transtorno_desintegrativo,
 def insert_endereco(endereco, complemento, numero_endereco, municipio, bairro, cep, zona, telefone, email, uf):
 
     query = """
-        INSERT INTO endereco (endereco, complemento, numero_endereco, municipio, bairro, cep, telefone, email, uf, zona)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO endereco (id_aluno, endereco, complemento, numero_endereco, municipio, bairro, cep, telefone, email, uf, zona)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
-    parametros = (endereco, complemento, numero_endereco, municipio, bairro, cep, telefone, email, uf, zona)
+    parametros = (last_id(),endereco, complemento, numero_endereco, municipio, bairro, cep, telefone, email, uf, zona)
     return executar_query(query, parametros)
 
 
 def insert_dados_pais_responsavel(nome_mae, nome_pai):
     query = """
         INSERT INTO dados_pais_responsavel 
-        (nome_mae, nome_pai)
-        VALUES (%s, %s)
+        (id_aluno, nome_mae, nome_pai)
+        VALUES (%s, %s, %s)
     """
-    parametros = (nome_mae, nome_pai)
+    parametros = (last_id(), nome_mae, nome_pai)
     return executar_query(query, parametros)
 
 
@@ -109,22 +149,113 @@ def insert_informacoes_matricula(nome_escola, cod_censo, data_ingresso_escola, m
 
     query = """
         INSERT INTO informacoes_matricula
-        (nome_escola, cod_censo, data_ingresso_escola, matricula, data_matricula, codigo_turma, participa_programa, transporte_escolar, turno, codigo_serie, codigo_procedencia)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        (id_aluno, nome_escola, cod_censo_inep, data_ingresso_escola, matricula, data_matricula, codigo_turma, participa_programa, transporte_escolar, turno, codigo_serie, codigo_procedencia)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
-    parametros = (nome_escola, cod_censo, data_ingresso_escola, matricula, data_matricula,
+    parametros = (last_id(), nome_escola, cod_censo, data_ingresso_escola, matricula, data_matricula,
                                  codigo_turma, participa_programa, transporte_escolar, turno, codigo_serie, codigo_procedencia)
     
     return executar_query(query, parametros)
 
+def checa_matricula(matricula):
+    query = """
+        SELECT matricula
+        FROM informacoes_matricula
+        WHERE matricula = %s
+    """
+    parametros = (matricula,)
+    return executar_query_freq(query, parametros)
+
 def insert_solicitacao_matricula(nome_aluno, matricula, codigo_turma, turno, codigo_serie, ano_letivo, documentos_pendentes):
     query = """
         INSERT INTO solicitacao_matricula
-        (nome_aluno, matricula, codigo_turma, turno, codigo_serie, ano_letivo, documentos_pendentes)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        (id_aluno, nome_aluno, matricula, codigo_turma, turno, codigo_serie, ano_letivo, documentos_pendentes)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     """
-    parametros = (nome_aluno, matricula, codigo_turma, turno, codigo_serie, ano_letivo, documentos_pendentes)
+    parametros = (last_id(), nome_aluno, matricula, codigo_turma, turno, codigo_serie, ano_letivo, documentos_pendentes)
     return executar_query(query, parametros)
+
+def listar_alunos_por_turma(codigo_turma):
+    query = """
+        SELECT ia.nome_aluno, im.matricula
+        FROM informacoes_matricula im
+        JOIN identificacao_aluno ia ON im.id_aluno = ia.id_aluno
+        WHERE im.codigo_serie = %s;
+    """
+    parametros = (codigo_turma,)
+    
+    alunos = executar_query_freq(query, parametros)
+    
+    return alunos
+
+def listar_frequencias_por_turma_ano(codigo_serie, ano):
+    query = """
+    SELECT ia.nome_aluno, im.matricula,
+       COALESCE(SUM(CASE WHEN EXTRACT(MONTH FROM f.data_presenca) = 1 AND EXTRACT(YEAR FROM f.data_presenca) = %s AND f.presenca = 'A' THEN 1 ELSE 0 END), 0) AS Jan,
+       COALESCE(SUM(CASE WHEN EXTRACT(MONTH FROM f.data_presenca) = 2 AND EXTRACT(YEAR FROM f.data_presenca) = %s AND f.presenca = 'A' THEN 1 ELSE 0 END), 0) AS Feb,
+       COALESCE(SUM(CASE WHEN EXTRACT(MONTH FROM f.data_presenca) = 3 AND EXTRACT(YEAR FROM f.data_presenca) = %s AND f.presenca = 'A' THEN 1 ELSE 0 END), 0) AS Mar,
+       COALESCE(SUM(CASE WHEN EXTRACT(MONTH FROM f.data_presenca) = 4 AND EXTRACT(YEAR FROM f.data_presenca) = %s AND f.presenca = 'A' THEN 1 ELSE 0 END), 0) AS Apr,
+       COALESCE(SUM(CASE WHEN EXTRACT(MONTH FROM f.data_presenca) = 5 AND EXTRACT(YEAR FROM f.data_presenca) = %s AND f.presenca = 'A' THEN 1 ELSE 0 END), 0) AS May,
+       COALESCE(SUM(CASE WHEN EXTRACT(MONTH FROM f.data_presenca) = 6 AND EXTRACT(YEAR FROM f.data_presenca) = %s AND f.presenca = 'A' THEN 1 ELSE 0 END), 0) AS Jun,
+       COALESCE(SUM(CASE WHEN EXTRACT(MONTH FROM f.data_presenca) = 7 AND EXTRACT(YEAR FROM f.data_presenca) = %s AND f.presenca = 'A' THEN 1 ELSE 0 END), 0) AS Jul,
+       COALESCE(SUM(CASE WHEN EXTRACT(MONTH FROM f.data_presenca) = 8 AND EXTRACT(YEAR FROM f.data_presenca) = %s AND f.presenca = 'A' THEN 1 ELSE 0 END), 0) AS Aug,
+       COALESCE(SUM(CASE WHEN EXTRACT(MONTH FROM f.data_presenca) = 9 AND EXTRACT(YEAR FROM f.data_presenca) = %s AND f.presenca = 'A' THEN 1 ELSE 0 END), 0) AS Sep,
+       COALESCE(SUM(CASE WHEN EXTRACT(MONTH FROM f.data_presenca) = 10 AND EXTRACT(YEAR FROM f.data_presenca) = %s AND f.presenca = 'A' THEN 1 ELSE 0 END), 0) AS Oct,
+       COALESCE(SUM(CASE WHEN EXTRACT(MONTH FROM f.data_presenca) = 11 AND EXTRACT(YEAR FROM f.data_presenca) = %s AND f.presenca = 'A' THEN 1 ELSE 0 END), 0) AS Nov,
+       COALESCE(SUM(CASE WHEN EXTRACT(MONTH FROM f.data_presenca) = 12 AND EXTRACT(YEAR FROM f.data_presenca) = %s AND f.presenca = 'A' THEN 1 ELSE 0 END), 0) AS Dec
+    FROM frequencia f
+    JOIN identificacao_aluno ia ON f.id_aluno = ia.id_aluno
+    JOIN informacoes_matricula im ON ia.id_aluno = im.id_aluno
+    WHERE im.codigo_serie = %s AND EXTRACT(YEAR FROM f.data_presenca) = %s
+    GROUP BY ia.nome_aluno, im.matricula;
+    """
+    parametros = (ano, ano, ano, ano, ano, ano, ano, ano, ano, ano, ano, ano, codigo_serie, ano)
+    resultados = executar_query_freq(query, parametros)
+    return resultados
+
+
+def realiza_freq(id_aluno, nome_aluno, matricula, data_presenca, presenca, justificativa, observacoes):
+    query= """
+        INSERT INTO frequencia (id_aluno, nome_aluno, matricula, data_presenca, presenca, justificativa, observacoes)
+        VALUES (%s, %s, %s, %s, %s, %s, %s);
+    """
+    parametros = (id_aluno, nome_aluno, matricula, data_presenca, presenca, justificativa, observacoes)
+    executar_query(query,parametros)
+
+def obter_frequencias_por_turma(codigo_serie):
+    query = """
+        SELECT ia.nome_aluno, f.data_presenca, f.presenca, im.codigo_serie
+        FROM frequencia f
+        INNER JOIN identificacao_aluno ia ON f.id_aluno = ia.id_aluno
+        INNER JOIN informacoes_matricula im ON ia.id_aluno = im.id_aluno
+        WHERE im.codigo_serie = %s;
+    """
+    parametros = (codigo_serie,)
+    
+    alunos = executar_query_freq(query, parametros)
+
+    return alunos
+
+def obter_id_aluno_por_matricula(matricula):
+    query = "SELECT id_aluno FROM informacoes_matricula WHERE matricula = %s;"
+    parametros = (matricula,)
+    conn = connect_db()
+    try:
+        cur = conn.cursor()
+        cur.execute(query, parametros)
+        result = cur.fetchone()
+        if result:
+            return result[0]
+        else:
+            return None
+    except Exception as e:
+        print(f"Erro ao conectar ao banco de dados: {e}")
+        return None
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
 def verifica_login(login):
     conn = connect_db()
@@ -166,3 +297,18 @@ def realiza_login(login, senha):
     else:
         print("Conexão com o banco de dados não foi estabelecida.")
         return False
+
+def busca_nome_usuario(login):
+    conn = connect_db()
+    cur = conn.cursor()
+    query = "SELECT nome_professor FROM usuarios WHERE login = %s"
+    cur.execute(query, (login,))
+
+    resultado = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if resultado:
+        return resultado[0] 
+    else:
+        return None
