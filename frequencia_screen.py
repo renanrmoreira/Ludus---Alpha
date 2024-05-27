@@ -20,14 +20,14 @@ class UI_FrequenciaWindow(object):
         self.lista_freq = QtWidgets.QListWidget(parent=self.centralwidget)
         self.lista_freq.setGeometry(QtCore.QRect(40, 150, 550, 530))
         self.lista_freq.setStyleSheet("background-color: rgb(243, 230, 213);\n"
-"border-style: outset;\n"
-"border-width: 2px;\n"
-"border-radius: 10px;\n"
-"border-color: black;\n"
-"font:bold 24px\"Inter Medium\" ;\n"
-"min-width: 5em;\n"
-"padding: 6px;\n"
-"color: rgb(131, 3, 2);")
+                                        "border-style: outset;\n"
+                                        "border-width: 2px;\n"
+                                        "border-radius: 10px;\n"
+                                        "border-color: black;\n"
+                                        "font:bold 24px\"Inter Medium\" ;\n"
+                                        "min-width: 5em;\n"
+                                        "padding: 6px;\n"
+                                        "color: rgb(131, 3, 2);")
         self.lista_freq.setObjectName("lista_freq")
         
         self.obs_label = QtWidgets.QLabel(parent=self.centralwidget)

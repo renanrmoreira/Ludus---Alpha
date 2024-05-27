@@ -4,6 +4,8 @@ from PyQt6.QtGui import QIcon
 from matricula_screen import *
 from frequencia_screen import *
 from relatorio_frequencia import *
+from editar_matricula1 import *
+
 
 class Ui_MainWindow(object):
     def __init__(self):
@@ -26,7 +28,8 @@ class Ui_MainWindow(object):
         self.frame.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
         self.frame.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
         self.frame.setObjectName("frame")
-        self.aluno_button = QtWidgets.QPushButton(parent=self.frame)
+
+        self.aluno_button = QtWidgets.QPushButton(parent=self.frame, clicked= lambda: self.abrir_tela_alunos())
         self.aluno_button.setGeometry(QtCore.QRect(210, 290, 196, 75))
         self.aluno_button.setMinimumSize(QtCore.QSize(196, 75))
         self.aluno_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
@@ -41,6 +44,7 @@ class Ui_MainWindow(object):
 "color: rgb(22, 22, 29)\n"
 "")
         self.aluno_button.setObjectName("aluno_button")
+
         self.nome_professor = QtWidgets.QLabel(parent=self.frame)
         self.nome_professor.setGeometry(QtCore.QRect(9, 156, 405, 28))
         font = QtGui.QFont()
@@ -134,6 +138,13 @@ class Ui_MainWindow(object):
         self.ui = Ui_RelatorioWindow()           
         self.ui.setupUi(self.tela_relatorio)           
         self.tela_relatorio.show()                     
+        QtWidgets.QApplication.instance().activeWindow().close()
+
+    def abrir_tela_alunos(self):
+        self.tela_alunos = QtWidgets.QMainWindow()
+        self.ui = Ui_Edit_1_Window()
+        self.ui.setupUi(self.tela_alunos)
+        self.tela_alunos.show()
         QtWidgets.QApplication.instance().activeWindow().close()
 
     def retranslateUi(self, MainWindow):

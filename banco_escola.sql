@@ -88,8 +88,6 @@ CREATE TABLE informacoes_matricula (
     FOREIGN KEY (id_aluno) REFERENCES identificacao_aluno(id_aluno)
 );
 
-drop table frequencia
-
 CREATE TABLE frequencia (
     id_frequencia SERIAL PRIMARY KEY,
     id_aluno INT,
