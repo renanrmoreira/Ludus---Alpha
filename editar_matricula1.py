@@ -182,6 +182,8 @@ class Ui_Edit_1_Window(object):
         self.edit_button.setToolTip(_translate("MainWindow", "Editar perfil selecionado (Max 1)"))
         self.edit_button.setText(_translate("MainWindow", "Editar"))
 
+        self.atualizar_lista()
+
 
     def executar_query(self, query, params):
         conn = connect_db()
@@ -238,17 +240,188 @@ class Ui_Edit_1_Window(object):
         try:
             cur = conn.cursor()
 
-            query_ia = """
+            # IDENTIFICAÇÃO ALUNO
+            query = """
                 SELECT * FROM identificacao_aluno
                 WHERE id_aluno = %s
             """
-            cur.execute(query_ia, [id])
-            tabela_ia = cur.fetchone()
+            cur.execute(query, [id])
+            tabela = cur.fetchone()
 
-            id_aluno = tabela_ia[0]
+            id_aluno = tabela[0]
+
+            nis = tabela[1]
+            nome_aluno = tabela[2]
+            sexo = tabela[3]
+            uf = tabela[4]
+            local_nascimento_municipio = tabela[5]
+            uf_cartorio = tabela[6]
+            municipio_cartorio = tabela[7]
+            nome_cartorio = tabela[8]
+            identidade_doc_pass = tabela[9]
+            data_expedicao_id = tabela[10]
+            orgao_emissor = tabela[11]
+            uf_identidade = tabela[12]
+            cpf = tabela[13]
+            raca = tabela[14]
+
+            # CERTIDÃO
+            query = """
+                SELECT * FROM certidao
+                WHERE id_aluno = %s
+            """
+            cur.execute(query, [id])
+            tabela = cur.fetchone()
+
+            num_matricula_rc = tabela[2]
+            num_termo = tabela[3]
+            livro = tabela[4]
+            folha = tabela[5]
+            data_expedicao_certidao = tabela[6]
+
+            # INFORMAÇÕES MATRICULA
+            query = """
+                SELECT * FROM informacoes_matricula
+                WHERE id_aluno = %s
+            """
+            cur.execute(query, [id])
+            tabela = cur.fetchone()
+
+            nome_escola = tabela[2]
+            cod_censo = tabela[3]
+            data_ingresso_escola = tabela[4]
+            matricula = tabela[5]
+            data_matricula = tabela[6]
+            codigo_turma = tabela[7]
+            turno = tabela[8]
+            codigo_serie = tabela[9]
+            codigo_procedencia = tabela[10]
+            participa_programa = tabela[11]
+            transporte_escolar = tabela[12]
+
+            # DADOS PAIS RESPONSAVEL
+            query = """
+                SELECT * FROM dados_pais_responsavel
+                WHERE id_aluno = %s
+            """
+            cur.execute(query, [id])
+            tabela = cur.fetchone()
+            nome_mae = tabela[2]
+            nome_pai = tabela[3]
+
+            # SAUDE
+            query = """
+                SELECT * FROM saude
+                WHERE id_aluno = %s
+            """
+            cur.execute(query, [id])
+            tabela = cur.fetchone()
+
+            autismo = tabela[2]
+            rett = tabela[3]
+            asperger = tabela[4]
+            transtorno_desintegrativo = tabela[5]
+            baixa_visao = tabela[6]
+            cegueira = tabela[7]
+            auditiva = tabela[8]
+            intelectual = tabela[9]
+            fisica = tabela[10]
+            multipla = tabela[11]
+            sindrome_down = tabela[12]
+            surdez = tabela[13]
+            surdocegueira = tabela[14]
+            altas_habilidades = tabela[15]
+
+            # ENDERECO
+            query = """
+                SELECT * FROM endereco
+                WHERE id_aluno = %s
+            """
+            cur.execute(query, [id])
+            tabela = cur.fetchone()
+
+            endereco = tabela[2]
+            complemento = tabela[3]
+            num_endereco = tabela[4]
+            municipio_endereco = tabela[5]
+            bairro = tabela[6]
+            cep = tabela[7]
+            zona = tabela[8]
+            telefone = tabela[9]
+            email = tabela[10]
+            uf_endereco = tabela[11]
+
 
             with open('dados_editar.pkl', 'wb') as arquivo:
+                # IDENTIFICAÇÃO ALUNO
                 pickle.dump(id_aluno, arquivo)
+                pickle.dump(nis, arquivo)
+                pickle.dump(nome_aluno, arquivo)
+                pickle.dump(sexo, arquivo)
+                pickle.dump(uf, arquivo)
+                pickle.dump(local_nascimento_municipio, arquivo)
+                pickle.dump(uf_cartorio, arquivo)
+                pickle.dump(municipio_cartorio, arquivo)
+                pickle.dump(nome_cartorio, arquivo)
+                pickle.dump(identidade_doc_pass, arquivo)
+                pickle.dump(data_expedicao_id, arquivo)
+                pickle.dump(orgao_emissor, arquivo)
+                pickle.dump(uf_identidade, arquivo)
+                pickle.dump(cpf, arquivo)
+                pickle.dump(raca, arquivo)
+
+                # CERTIDÃO
+                pickle.dump(num_matricula_rc, arquivo)
+                pickle.dump(num_termo, arquivo)
+                pickle.dump(livro, arquivo)
+                pickle.dump(folha, arquivo)
+                pickle.dump(data_expedicao_certidao, arquivo)
+
+                # INFORMAÇÕES MATRICULA
+                pickle.dump(nome_escola, arquivo)
+                pickle.dump(cod_censo, arquivo)
+                pickle.dump(data_ingresso_escola, arquivo)
+                pickle.dump(matricula, arquivo)
+                pickle.dump(data_matricula, arquivo)
+                pickle.dump(codigo_turma, arquivo)
+                pickle.dump(turno, arquivo)
+                pickle.dump(codigo_serie, arquivo)
+                pickle.dump(codigo_procedencia, arquivo)
+                pickle.dump(participa_programa, arquivo)
+                pickle.dump(transporte_escolar, arquivo)
+
+                # DADOS PAIS RESPONSAVEL
+                pickle.dump(nome_mae, arquivo)
+                pickle.dump(nome_pai, arquivo)
+
+                # SAUDE
+                pickle.dump(autismo, arquivo)
+                pickle.dump(rett, arquivo)
+                pickle.dump(asperger, arquivo)
+                pickle.dump(transtorno_desintegrativo, arquivo)
+                pickle.dump(baixa_visao, arquivo)
+                pickle.dump(cegueira, arquivo)
+                pickle.dump(auditiva, arquivo)
+                pickle.dump(intelectual, arquivo)
+                pickle.dump(fisica, arquivo)
+                pickle.dump(multipla, arquivo)
+                pickle.dump(sindrome_down, arquivo)
+                pickle.dump(surdez, arquivo)
+                pickle.dump(surdocegueira, arquivo)
+                pickle.dump(altas_habilidades, arquivo)
+
+                # ENDERECO
+                pickle.dump(endereco, arquivo)
+                pickle.dump(complemento, arquivo)
+                pickle.dump(num_endereco, arquivo)
+                pickle.dump(municipio_endereco, arquivo)
+                pickle.dump(bairro, arquivo)
+                pickle.dump(cep, arquivo)
+                pickle.dump(zona, arquivo)
+                pickle.dump(telefone, arquivo)
+                pickle.dump(email, arquivo)
+                pickle.dump(uf_endereco, arquivo)
+
 
         except Exception as e:
             print(f"Erro ao executar query: {e}")
@@ -269,6 +442,7 @@ class Ui_Edit_1_Window(object):
                 if id_aluno:
                     self.armazenar_dados_matricula(id_aluno)
                     self.abrir_tela_editar_2()
+                    break
                 else:
                     print(f"Não foi possível encontrar o ID para a matrícula {matricula}")
 

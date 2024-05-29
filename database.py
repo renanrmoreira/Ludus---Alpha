@@ -26,10 +26,10 @@ def executar_query(query, parametros):
             with conn.cursor() as cur:
                 cur.execute(query, parametros)
                 conn.commit()
-                return "Dados inseridos com sucesso"
+                return "Query executada com sucesso"
         except psycopg2.Error as e:
             conn.rollback()
-            return f"Falha ao inserir dados: {str(e)}"
+            return f"Falha ao executar query: {str(e)}"
         finally:
             conn.close()
     else:
@@ -64,7 +64,7 @@ def last_id():
         cur.execute(query)
 
         result = cur.fetchone()
-        last_id_aluno = result[0] if result else None
+        last_id_aluno = result[0] if result is not None else 0
 
         cur.close()
         conn.close()
@@ -173,6 +173,69 @@ def insert_solicitacao_matricula(nome_aluno, matricula, codigo_turma, turno, cod
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     """
     parametros = (last_id(), nome_aluno, matricula, codigo_turma, turno, codigo_serie, ano_letivo, documentos_pendentes)
+    return executar_query(query, parametros)
+
+#UPDATES
+def update_identificacao_aluno(nis, nome_aluno, sexo_aluno, nascimento_uf, nascimento_municipio,cartorio_uf, nome_cartorio, cartorio_municipio, data_exp_identidade,orgao_emissor, uf_identidade, cpf, raca_aluno, id_aluno):
+
+    query = """
+        UPDATE identificacao_aluno 
+        SET NIS = %s, nome_aluno = %s, sexo = %s, UF = %s, local_nascimento_municipio = %s, uf_cartorio = %s, nome_cartorio = %s, data_expedicao_identidade = %s, orgao_emissor = %s, uf_identidade = %s, cpf = %s, aluno_raca = %s, municipio_cartório = %s
+        WHERE id_aluno = %s
+    """
+    parametros = (nis, nome_aluno, sexo_aluno, nascimento_uf, nascimento_municipio,
+              cartorio_uf, nome_cartorio, data_exp_identidade,
+              orgao_emissor, uf_identidade, cpf, raca_aluno, cartorio_municipio,id_aluno)
+    return executar_query(query, parametros)
+
+def update_certidao(num_matricula_registro_civil, num_termo, livro, folha, data_expedicao_certidao, id_aluno):
+
+    query = """
+        UPDATE certidao 
+        SET num_matricula_registro_civil = %s, num_termo = %s, livro = %s, folha = %s, data_expedicao_certidao = %s
+        WHERE id_aluno = %s
+    """
+    parametros = (num_matricula_registro_civil, num_termo, livro, folha, data_expedicao_certidao, id_aluno)
+    return executar_query(query, parametros)
+
+
+def update_informacoes_matricula(nome_escola, cod_censo, data_ingresso_escola, matricula, data_matricula, codigo_turma, participa_programa, transporte_escolar, turno, codigo_serie, codigo_procedencia,id_aluno):
+    query = """
+        UPDATE informacoes_matricula
+        SET nome_escola = %s, cod_censo_inep = %s, data_ingresso_escola = %s, matricula = %s, data_matricula = %s, codigo_turma = %s, participa_programa = %s, transporte_escolar = %s, turno = %s, codigo_serie = %s, codigo_procedencia = %s
+        WHERE id_aluno = %s
+    """
+    parametros = (nome_escola, cod_censo, data_ingresso_escola, matricula, data_matricula,
+                  codigo_turma, participa_programa, transporte_escolar, turno, codigo_serie, codigo_procedencia, id_aluno)
+
+    return executar_query(query, parametros)
+
+def update_dados_pais_responsavel(nome_mae, nome_pai, id_aluno):
+    query = """
+        UPDATE dados_pais_responsavel 
+        SET nome_mae = %s, nome_pai = %s
+        WHERE id_aluno = %s
+    """
+    parametros = (nome_mae, nome_pai, id_aluno)
+    return executar_query(query, parametros)
+
+def update_saude(autismo, rett, asperger, transtorno_desintegrativo, baixa_visao, cegueira, auditiva, intelectual, fisica, multipla, sindrome_down, surdez, surdocegueira, altas_habilidades, id_aluno):
+    query = """
+        UPDATE saude 
+        SET autismo = %s, rett = %s, asperger = %s, transtorno_desintegrativo = %s, baixa_visao = %s, cegueira = %s, auditiva = %s, intelectual = %s, fisica = %s, multipla = %s, sindrome_down = %s, surdez = %s, surdocegueira = %s, altas_habilidades = %s
+        WHERE id_aluno = %s
+    """
+    parametros = (autismo, rett, asperger, transtorno_desintegrativo, baixa_visao, cegueira, auditiva, intelectual, fisica, multipla, sindrome_down, surdez, surdocegueira, altas_habilidades, id_aluno)
+    return executar_query(query, parametros)
+
+def update_endereco(endereco, complemento, numero_endereco, municipio, bairro, cep, zona, telefone, email, uf, id_aluno):
+
+    query = """
+        UPDATE endereco 
+        SET endereco = %s, complemento = %s, numero_endereco = %s, municipio = %s, bairro = %s, cep = %s, telefone = %s, email = %s, uf = %s, zona = %s
+        WHERE id_aluno = %s
+    """
+    parametros = (endereco, complemento, numero_endereco, municipio, bairro, cep, telefone, email, uf, zona, id_aluno)
     return executar_query(query, parametros)
 
 def listar_alunos_por_turma(codigo_turma):
