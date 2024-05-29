@@ -454,7 +454,10 @@ class Ui_Edit_1_Window(object):
         for index in range(self.lista_alunos.count()):
             item = self.lista_alunos.item(index)
 
+
             if item.checkState() == Qt.CheckState.Checked:
+
+                print(item)
 
                 matricula, nome_aluno = item.text().split(' - ')
                 id_aluno = obter_id_aluno_por_matricula(matricula)
@@ -473,9 +476,9 @@ class Ui_Edit_1_Window(object):
 
             else:
 
-                print(f"Nenhum item selecionado")
+                print(f"Item não selecionado")
 
-            self.atualizar_lista()
+        self.atualizar_lista()
 
 
 
