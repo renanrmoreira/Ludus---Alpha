@@ -1,16 +1,18 @@
-from database import insert_identificacao_aluno,insert_saude,insert_endereco,insert_dados_pais_responsavel,insert_informacoes_matricula,insert_saude,insert_certidao,checa_matricula
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QMessageBox
-from criar_excel import adicionar_dados_excel
-from PyQt6.QtGui import QIntValidator
+from PyQt6.QtCore import QRegularExpression, Qt
+from PyQt6.QtGui import QIcon, QRegularExpressionValidator
 
+from criar_excel import adicionar_dados_excel
+from database import connect_db, insert_identificacao_aluno,insert_saude,insert_endereco,insert_dados_pais_responsavel,insert_informacoes_matricula,insert_saude,insert_certidao,checa_matricula
 
 class UI_MatriculaWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(750, 659)
-        MainWindow.setMaximumSize(QtCore.QSize(1980, 1080))
+        MainWindow.setMinimumSize(QtCore.QSize(750, 659))
+        MainWindow.setMaximumSize(QtCore.QSize(750, 659))
+        MainWindow.setWindowFlags(MainWindow.windowFlags() & ~Qt.WindowType.WindowMaximizeButtonHint)
         font = QtGui.QFont()
         font.setFamily("Montserrat Medium")
         MainWindow.setFont(font)
@@ -66,6 +68,9 @@ class UI_MatriculaWindow(object):
         self.verticalLayout_3.addWidget(self.nome_aluno)
 
         validador = QtGui.QIntValidator()
+
+        cpf_regex = QRegularExpression("^\\d{11}$")
+        cpf_validador = QRegularExpressionValidator(cpf_regex)
 
         self.codigo_NIS = QtWidgets.QLineEdit(parent=self.id_aluno)
         font = QtGui.QFont()
@@ -381,7 +386,7 @@ class UI_MatriculaWindow(object):
         self.cpf_aluno.setMaxLength(15)
         self.cpf_aluno.setClearButtonEnabled(False)
         self.cpf_aluno.setObjectName("cpf_aluno")
-        self.cpf_aluno.setValidator(validador)
+        self.cpf_aluno.setValidator(cpf_validador)
         self.gridLayout_4.addWidget(self.cpf_aluno, 4, 0, 1, 1)
         self.documento_tipo = QtWidgets.QLineEdit(parent=self.info_documentos)
         font = QtGui.QFont()
@@ -1384,7 +1389,7 @@ class UI_MatriculaWindow(object):
         self.cancel_button.setObjectName("cancel_button")
         
         self.label = QtWidgets.QLabel(parent=self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(50, 20, 392, 70))
+        self.label.setGeometry(QtCore.QRect(50, 10, 392, 75))
         self.label.setStyleSheet("font: 57 40pt \"Trend Slab Four\";\n"
 "color:rgb(45, 84, 60)\n"
 "")
@@ -1466,7 +1471,7 @@ class UI_MatriculaWindow(object):
         self.sel_serie.setItemText(21, _translate("MainWindow", "22. 3° Ano"))
         self.sel_serie.setItemText(22, _translate("MainWindow", "23. 4° Ano"))
         self.turno_label.setText(_translate("MainWindow", "Turno*"))
-        self.transporte.setText(_translate("MainWindow", "Transporte Escolar?"))
+        self.transporte.setText(_translate("MainWindow", "Transporte Escolar"))
         self.sel_turno.setItemText(0, _translate("MainWindow", "Manhã"))
         self.sel_turno.setItemText(1, _translate("MainWindow", "Intermediário"))
         self.sel_turno.setItemText(2, _translate("MainWindow", "Tarde"))
@@ -1526,176 +1531,191 @@ class UI_MatriculaWindow(object):
 
 
     def matricula_aluno(self):
+        conn = connect_db()
+        if conn is not None:
+                try:
+                        conn.autocommit = False
+
+                        id_aluno = self.insert_identificacao_aluno_ui(conn)
+                        print("ID Aluno:", id_aluno)
+                        if id_aluno is None:
+                                raise Exception("Falha ao inserir identificação do aluno")
+
+                        if not self.insert_saude_ui(conn, id_aluno):
+                                raise Exception("Falha ao inserir informações de saúde")
+                        
+                        if not self.insert_endereco_ui(conn, id_aluno):
+                                raise Exception("Falha ao inserir endereço")
+
+                        if not self.insert_dados_pais_ui(conn, id_aluno):
+                                raise Exception("Falha ao inserir dados dos pais ou responsáveis")
+
+                        if not self.insert_informacoes_matricula_ui(conn, id_aluno):
+                                raise Exception("Falha ao inserir informações da matrícula")
+
+                        if not self.insert_certidao_ui(conn, id_aluno):
+                                raise Exception("Falha ao inserir certidão")
+
+                        conn.commit()
+                        print("Todos os dados foram inseridos com sucesso.")
+
+                except Exception as e:
+                        print(f"Erro durante a matrícula: {e}")
+                        conn.rollback()
+
+                finally:
+                        conn.close()
+        else:
+                print("Não foi possível conectar ao banco de dados.")
+
+
+
+
+    def insert_identificacao_aluno_ui(self, conn):
         try:
-            resultado_identificacao = self.insert_identificacao_aluno_ui()
-            if not resultado_identificacao:
-                raise Exception("Falha ao inserir identificação do aluno")
+                nome_aluno = self.nome_aluno.text()
+                codigo_NIS = self.codigo_NIS.text()
+                raca_aluno = self.sel_id_racial.currentText()
+                sexo_aluno = self.sel_sexo.currentText()
+                nascimento_uf = self.nascimento_uf.text()
+                nascimento_municipio = self.nascimento_municipio.text()
+                cartorio_uf = self.cartorio_uf.text()
+                nome_cartorio = self.cartorio_nome.text()
+                cartorio_municipio = self.cartorio_municipio.text()
+                data_exp_identidade = self.data_expedicao.date().toString("yyyy-MM-dd")
+                orgao_emissor = self.documento_orgao_emissor.text()
+                uf_identidade = self.nascimento_uf.text()
+                cpf = self.cpf_aluno.text()
+                info_documentos = self.documento_tipo.text()
 
-            resultado_saude = self.insert_saude_ui()
-            if not resultado_saude:
-                raise Exception("Falha ao inserir informações de saúde")
+                if len(cpf) != 11:
+                        QMessageBox(QMessageBox.Icon.Warning, "Erro", "CPF INVÁLIDO", QMessageBox.StandardButton.Ok).exec()
+                        return False  # Aqui pode ser a fonte do erro se n rolar alterar para `return None`.
+                
+                if not all([nome_aluno, raca_aluno, sexo_aluno, nascimento_uf, nascimento_municipio, data_exp_identidade, orgao_emissor, uf_identidade, cpf]):
+                        QMessageBox(QMessageBox.Icon.Warning, "Erro", "Alguns campos do Identificação do Aluno estão vazios", QMessageBox.StandardButton.Ok).exec()
+                        return False  # Aqui tbm pode ser a fonte do erro se n rolar alterar para `return None`.
 
-            resultado_endereco = self.insert_endereco_ui()
-            if not resultado_endereco:
-                raise Exception("Falha ao inserir endereço")
-
-            resultado_dados_pais = self.insert_dados_pais_ui()
-            if not resultado_dados_pais:
-                raise Exception("Falha ao inserir dados dos pais ou responsáveis")
-
-            resultado_informacoes_matricula = self.insert_informacoes_matricula_ui()
-            if not resultado_informacoes_matricula:
-                raise Exception("Falha ao inserir informações da matrícula")
-
-            resultado_certidao = self.insert_certidao_ui()
-            if not resultado_certidao:
-                raise Exception("Falha ao inserir certidão")
-            
-
-            self.salvar_excel()
-
-            self.exibir_mensagem_sucesso()
+                id_aluno = insert_identificacao_aluno(conn, codigo_NIS, nome_aluno, sexo_aluno, nascimento_uf, nascimento_municipio,
+                                                cartorio_uf, nome_cartorio, info_documentos, data_exp_identidade,
+                                                orgao_emissor, uf_identidade, cpf, raca_aluno, cartorio_municipio)
+                
+                return id_aluno 
 
         except Exception as e:
-            print(str(e))
-            self.exibir_mensagem_erro()
+                print(f"Erro ao inserir identificação do aluno: {e}")
+                return None
 
 
-    def insert_identificacao_aluno_ui(self):
+
+    def insert_saude_ui(self, conn, id_aluno):
         try:
-            nome_aluno = self.nome_aluno.text()
-            codigo_NIS = self.codigo_NIS.text()
-            raca_aluno = self.sel_id_racial.currentText()
-            sexo_aluno = self.sel_sexo.currentText()
-            nascimento_uf = self.nascimento_uf.text()
-            nascimento_municipio = self.nascimento_municipio.text()
-            cartorio_uf = self.cartorio_uf.text()
-            nome_cartorio = self.cartorio_nome.text()
-            cartorio_municipio = self.cartorio_municipio.text()
-            data_exp_identidade = self.data_expedicao.date().toString("yyyy-MM-dd")
-            orgao_emissor = self.documento_orgao_emissor.text()
-            uf_identidade = self.nascimento_uf.text()
-            cpf = self.cpf_aluno.text()
+                autismo = self.def_autismo.isChecked()
+                rett = self.def_rett.isChecked()
+                asperger = self.def_asperger.isChecked()
+                transtorno_desintegrativo = self.def_TDI.isChecked()
+                baixa_visao = self.def_baixa_visao.isChecked()
+                cegueira = self.def_cegueira.isChecked()
+                auditiva = self.def_auditiva.isChecked()
+                intelectual = self.def_intelectual.isChecked()
+                fisica = self.def_fisica.isChecked()
+                multipla = self.def_multipla.isChecked()
+                sindrome_down = self.def_down.isChecked()
+                surdez = self.def_surdez.isChecked()
+                surdocegueira = self.def_surdocegueira.isChecked()
+                altas_habilidades = self.altas_habilidades.isChecked()
 
-            if not all([nome_aluno, codigo_NIS, raca_aluno, sexo_aluno, nascimento_uf, nascimento_municipio,
-                    cartorio_uf, nome_cartorio, cartorio_municipio, data_exp_identidade, orgao_emissor,
-                    uf_identidade, cpf]):
+                resultado = insert_saude(conn, id_aluno, autismo, rett, asperger, transtorno_desintegrativo,
+                                 baixa_visao, cegueira, auditiva, intelectual, fisica,
+                                 multipla, sindrome_down, surdez, surdocegueira, altas_habilidades)
 
-                QMessageBox(QMessageBox.Icon.Warning, "Erro", "Alguns campos do Identificação do Aluno estão vazios", QMessageBox.StandardButton.Ok).exec()
+                return True if resultado else False
+        except Exception as e:
+                print(f"Erro ao inserir informações de saúde: {e}")
                 return False
 
-            resultado = insert_identificacao_aluno(codigo_NIS, nome_aluno,
-                                        sexo_aluno, nascimento_uf, nascimento_municipio,
-                                        cartorio_uf, nome_cartorio, cartorio_municipio, data_exp_identidade,
-                                        orgao_emissor, uf_identidade, cpf, raca_aluno)
-            return True if resultado else False
-        except Exception as e:
-            print(f"Erro ao inserir identificação do aluno: {e}")
-            return False
 
-    def insert_saude_ui(self):
+    def insert_endereco_ui(self, conn, id_aluno):
         try:
-            autismo = self.def_autismo.isChecked()
-            rett = self.def_rett.isChecked()
-            asperger = self.def_asperger.isChecked()
-            transtorno_desintegrativo = self.def_TDI.isChecked()
-            baixa_visao = self.def_baixa_visao.isChecked()
-            cegueira = self.def_cegueira.isChecked()
-            auditiva = self.def_auditiva.isChecked()
-            intelectual = self.def_intelectual.isChecked()
-            fisica = self.def_fisica.isChecked()
-            multipla = self.def_multipla.isChecked()
-            sindrome_down = self.def_down.isChecked()
-            surdez = self.def_surdez.isChecked()
-            surdocegueira = self.def_surdocegueira.isChecked()
-            altas_habilidades = self.altas_habilidades.isChecked()
+                endereco = self.endereco.text()
+                complemento = self.complemento.text()
+                numero_endereco = self.numero.text()
+                municipio = self.municipio_endereco.text()
+                bairro = self.bairro_endereco.text()
+                cep = self.CEP.text()
+                zona = self.sel_zona.currentText()
+                telefone = self.telefone.text()
+                email = self.email.text()
+                uf = self.uf_endereco.text()
 
-            resultado = insert_saude(autismo, rett, asperger, transtorno_desintegrativo,
-                                baixa_visao, cegueira, auditiva, intelectual, fisica,
-                                multipla, sindrome_down, surdez, surdocegueira, altas_habilidades)
-            return True if resultado else False
+                resultado = insert_endereco(conn, id_aluno, endereco, complemento, numero_endereco, municipio, bairro, cep, zona, telefone, email, uf)
+                return True if resultado else False
         except Exception as e:
-            print(f"Erro ao inserir informações de saúde: {e}")
-            return False
-
-    def insert_endereco_ui(self):
-        try:
-            endereco = self.endereco.text()
-            complemento = self.complemento.text()  
-            numero_endereco = self.numero.text()  
-            municipio = self.municipio_endereco.text()  
-            bairro = self.bairro_endereco.text()  
-            cep = self.CEP.text()
-            zona = self.sel_zona.currentText()
-            telefone = self.telefone.text()
-            email = self.email.text()
-            uf = self.uf_endereco.text()
-
-            resultado = insert_endereco(endereco, complemento, numero_endereco, municipio, bairro, cep, zona, telefone, email, uf)
-            return True if resultado else False
-        except Exception as e:
-            print(f"Erro ao inserir endereço: {e}")
-            return False
-
-    def insert_dados_pais_ui(self):
-        try:
-            nome_pai = self.nome_pai.text()
-            nome_mae = self.nome_mae.text()
-
-            if not all([nome_mae]):
-
-                QMessageBox(QMessageBox.Icon.Warning, "Erro", "Alguns campos Dados dos Pais estão vazios", QMessageBox.StandardButton.Ok).exec()
+                print(f"Erro ao inserir endereço: {e}")
                 return False
 
-            resultado = insert_dados_pais_responsavel(nome_mae, nome_pai)
-            return True if resultado else False
-        except Exception as e:
-            print(f"Erro ao inserir dados dos pais ou responsáveis: {e}")
-            return False
 
-    def insert_informacoes_matricula_ui(self):
+    def insert_dados_pais_ui(self, conn, id_aluno):
         try:
-            nome_escola = self.nome_escola.text()
-            codigo_turma = self.codigo_turma.text()
-            data_matricula = self.data_matricula.text()
-            codigo_inep = self.codigo_inep.text()
-            matricula = self.matricula.text()
-            data_ingresso_escola = self.data_ingresso_escola.text()
-            turno = self.sel_turno.currentText()
-            serie = self.sel_serie.currentText() 
-            codigo_procedencia = self.sel_procedencia.currentText()
-            programa_bolsa_familia = self.bolsa_familia.isChecked()  
-            transporte_escolar = self.transporte.isChecked()
+                nome_pai = self.nome_pai.text()
+                nome_mae = self.nome_mae.text()
 
-            if not all([nome_escola, codigo_turma, data_matricula, codigo_inep, matricula, data_ingresso_escola,
-                    turno, serie, codigo_procedencia]):
+                if not nome_mae:
+                        QMessageBox(QMessageBox.Icon.Warning, "Erro", "O campo nome da mãe está vazio", QMessageBox.StandardButton.Ok).exec()
+                        return False
 
-                QMessageBox(QMessageBox.Icon.Warning, "Erro", "Alguns campos do Iformações da Matrícula estão vazios", QMessageBox.StandardButton.Ok).exec()
-                return False
-            
-            if checa_matricula(matricula):
-                QMessageBox(QMessageBox.Icon.Warning, "Erro", "Matrícula já cadastrada", QMessageBox.StandardButton.Ok).exec()
+                resultado = insert_dados_pais_responsavel(conn, id_aluno, nome_mae, nome_pai)
+                return True if resultado else False
+        except Exception as e:
+                print(f"Erro ao inserir dados dos pais ou responsáveis: {e}")
                 return False
 
-            resultado = insert_informacoes_matricula(nome_escola, codigo_inep, data_ingresso_escola, matricula, data_matricula, codigo_turma, programa_bolsa_familia, transporte_escolar, turno, serie, codigo_procedencia)
-            return True if resultado else False
-        except Exception as e:
-            print(f"Erro ao inserir informações da matrícula: {e}")
-            return False
 
-    def insert_certidao_ui(self):
+    def insert_informacoes_matricula_ui(self, conn, id_aluno):
         try:
-            num_matricula_registro_civil = self.numero_registro_civil.text()  
-            num_termo = self.numero_termo.text()
-            livro = self.livro.text()
-            folha = self.folha.text()
-            data_expedicao_certidao = self.data_expedicao.date().toString("yyyy-MM-dd")
+                nome_escola = self.nome_escola.text()
+                codigo_turma = self.codigo_turma.text()
+                data_matricula = self.data_matricula.text()
+                codigo_inep = self.codigo_inep.text()
+                matricula = self.matricula.text()
+                data_ingresso_escola = self.data_ingresso_escola.text()
+                turno = self.sel_turno.currentText()
+                serie = self.sel_serie.currentText() 
+                codigo_procedencia = self.sel_procedencia.currentText()
+                programa_bolsa_familia = self.bolsa_familia.isChecked()  
+                transporte_escolar = self.transporte.isChecked()
+                ano_letivo = self.ano_letivo.text()
 
-            resultado = insert_certidao(num_matricula_registro_civil, num_termo, livro, folha, data_expedicao_certidao)
-            return True if resultado else False
+                if not all([nome_escola, codigo_turma, data_matricula, codigo_inep, matricula, data_ingresso_escola,
+                        turno, serie, codigo_procedencia, ano_letivo]):
+                        QMessageBox(QMessageBox.Icon.Warning, "Erro", "Alguns campos das Informações da Matrícula estão vazios", QMessageBox.StandardButton.Ok).exec()
+                        return False
+                
+                if checa_matricula(matricula):
+                        QMessageBox(QMessageBox.Icon.Warning, "Erro", "Matrícula já cadastrada", QMessageBox.StandardButton.Ok).exec()
+                        return False
+
+                resultado = insert_informacoes_matricula(conn, id_aluno, nome_escola, codigo_inep, data_ingresso_escola, matricula, data_matricula, codigo_turma, programa_bolsa_familia, transporte_escolar, turno, serie, codigo_procedencia, ano_letivo)
+                return True if resultado else False
         except Exception as e:
-            print(f"Erro ao inserir certidão: {e}")
-            return False
+                print(f"Erro ao inserir informações da matrícula: {e}")
+                return False
+
+
+    def insert_certidao_ui(self, conn, id_aluno):
+        try:
+                num_matricula_registro_civil = self.numero_registro_civil.text()  
+                num_termo = self.numero_termo.text()
+                livro = self.livro.text()
+                folha = self.folha.text()
+                data_expedicao_certidao = self.data_expedicao.date().toString("yyyy-MM-dd")
+
+                resultado = insert_certidao(conn, id_aluno, num_matricula_registro_civil, num_termo, livro, folha, data_expedicao_certidao)
+                return True if resultado else False
+        except Exception as e:
+                print(f"Erro ao inserir certidão: {e}")
+                return False
+
         
 
     def bool_para_sim_nao(self,valor):
@@ -1792,7 +1812,7 @@ class UI_MatriculaWindow(object):
         self.tela_principal.show()                     
         QtWidgets.QApplication.instance().activeWindow().close()
 
-"""
+
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
@@ -1801,4 +1821,3 @@ if __name__ == "__main__":
     ui.setupUi(MainWindow)
     MainWindow.show()
     sys.exit(app.exec())
-"""

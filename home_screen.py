@@ -1,11 +1,12 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import QSettings
+from PyQt6.QtCore import QSettings, Qt
 from PyQt6.QtGui import QIcon
+
+
 from matricula_screen import *
 from frequencia_screen import *
 from relatorio_frequencia import *
 from editar_matricula1 import *
-
 
 class Ui_MainWindow(object):
     def __init__(self):
@@ -17,6 +18,9 @@ class Ui_MainWindow(object):
         self.username = username
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(640, 480)
+        MainWindow.setMinimumSize(640, 480)
+        MainWindow.setMaximumSize(640, 480)
+        MainWindow.setWindowFlags(MainWindow.windowFlags() & ~Qt.WindowType.WindowMaximizeButtonHint)
         MainWindow.setStyleSheet("background-color: rgb(243, 230, 213);")
         MainWindow.setWindowTitle(f"Bem-vindo ao LUDUS - Usuário: {username}")
         MainWindow.setWindowIcon(QIcon('imagens\\5.png'))
@@ -119,6 +123,20 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
+        self.logOut_button = QtWidgets.QPushButton(parent=self.centralwidget)
+        self.logOut_button.setGeometry(QtCore.QRect(10, 10, 100, 50))  # Tamanho reduzido
+        self.logOut_button.setStyleSheet("background-color: rgb(131, 3, 2);\n"
+                                         "border-style: outset;\n"
+                                         "border-width: 2px;\n"
+                                         "border-radius: 10px;\n"
+                                         "border-color: black;\n"
+                                         "font:bold 14px \"Inter Black\" ;\n"
+                                         "color: rgb(243, 230, 213);\n")
+        self.logOut_button.setText("Sair")
+        self.logOut_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        self.logOut_button.setObjectName("logOut_button")
+        self.logOut_button.clicked.connect(self.logout)
+
     def abrir_tela_cadastro(self):
         self.tela_cadastro = QtWidgets.QMainWindow()
         self.ui = UI_MatriculaWindow()           
@@ -145,6 +163,14 @@ class Ui_MainWindow(object):
         self.ui = Ui_Edit_1_Window()
         self.ui.setupUi(self.tela_alunos)
         self.tela_alunos.show()
+        QtWidgets.QApplication.instance().activeWindow().close()
+
+    def logout(self):
+        from main import Ui_Login_Win
+        self.tela_login = QtWidgets.QMainWindow()
+        self.ui = Ui_Login_Win()
+        self.ui.setupUi(self.tela_login)
+        self.tela_login.show()
         QtWidgets.QApplication.instance().activeWindow().close()
 
     def retranslateUi(self, MainWindow):

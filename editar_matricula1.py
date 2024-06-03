@@ -1,12 +1,16 @@
 from PyQt6.QtCore import Qt
 from database import *
 from editar_matricula2 import *
-
+from PyQt6.QtGui import QIcon
 
 class Ui_Edit_1_Window(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(936, 750)
+        MainWindow.setMinimumSize(936, 750)
+        MainWindow.setMaximumSize(936, 750)
+        MainWindow.setWindowFlags(MainWindow.windowFlags() & ~Qt.WindowType.WindowMaximizeButtonHint)
+        MainWindow.setWindowIcon(QIcon('imagens\\2.png'))
         MainWindow.setStyleSheet("background-color: rgb(243, 230, 213);\n"
                                  "\n"
                                  "")
@@ -39,6 +43,7 @@ class Ui_Edit_1_Window(object):
                                          "padding: 6px;\n"
                                          "color: rgb(203, 132, 0)")
         self.cancel_button.setObjectName("cancel_button")
+        self.cancel_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         self.title_label = QtWidgets.QLabel(parent=self.centralwidget)
         self.title_label.setGeometry(QtCore.QRect(160, 30, 341, 101))
         font = QtGui.QFont()
@@ -60,6 +65,8 @@ class Ui_Edit_1_Window(object):
                                           "color: rgb(243, 230, 213);\n"
                                           "")
         self.refresh_button.setObjectName("refresh_button")
+        self.refresh_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        
         self.turma_selection = QtWidgets.QComboBox(parent=self.centralwidget)
         self.turma_selection.setGeometry(QtCore.QRect(290, 150, 261, 41))
         self.turma_selection.setStyleSheet("background-color:rgb(243, 230, 213);\n"
@@ -125,6 +132,7 @@ class Ui_Edit_1_Window(object):
                                             "padding: 6px;\n"
                                             "color: rgb(203, 132, 0)")
         self.delete_button.setObjectName("delete_button")
+        self.delete_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
 
         self.edit_button = QtWidgets.QPushButton(parent=self.centralwidget, clicked=lambda: self.editar_aluno())  # EDITAR
         self.edit_button.setGeometry(QtCore.QRect(710, 670, 136, 61))
@@ -139,6 +147,7 @@ class Ui_Edit_1_Window(object):
                                             "color: rgb(243, 230, 213);\n"
                                             "")
         self.edit_button.setObjectName("edit_button")
+        self.edit_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
@@ -146,7 +155,7 @@ class Ui_Edit_1_Window(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Editar Matrícula do Aluno"))
         #self.confirm_button.setText(_translate("MainWindow", "Confirmar"))
         self.cancel_button.setText(_translate("MainWindow", "Cancelar"))
         self.title_label.setText(_translate("MainWindow", "<html><head/><body><p>alunos</p></body></html>"))
@@ -183,7 +192,6 @@ class Ui_Edit_1_Window(object):
         self.edit_button.setText(_translate("MainWindow", "Editar"))
 
         self.atualizar_lista()
-
 
     def executar_query(self, query, params):
         conn = connect_db()
@@ -298,6 +306,7 @@ class Ui_Edit_1_Window(object):
             codigo_procedencia = tabela[10]
             participa_programa = tabela[11]
             transporte_escolar = tabela[12]
+            ano_letivo = tabela[13]
 
             # DADOS PAIS RESPONSAVEL
             query = """
@@ -389,6 +398,7 @@ class Ui_Edit_1_Window(object):
                 pickle.dump(codigo_procedencia, arquivo)
                 pickle.dump(participa_programa, arquivo)
                 pickle.dump(transporte_escolar, arquivo)
+                pickle.dump(ano_letivo, arquivo)
 
                 # DADOS PAIS RESPONSAVEL
                 pickle.dump(nome_mae, arquivo)
@@ -435,6 +445,8 @@ class Ui_Edit_1_Window(object):
         for index in range(self.lista_alunos.count()):
             item = self.lista_alunos.item(index)
 
+            print(item)
+
             if item.checkState() == Qt.CheckState.Checked:
 
                 matricula, nome_aluno = item.text().split(' - ')
@@ -447,7 +459,6 @@ class Ui_Edit_1_Window(object):
                     print(f"Não foi possível encontrar o ID para a matrícula {matricula}")
 
             else:
-
                 print(f"Nenhum item selecionado")
 
     def excluir_aluno(self):
@@ -456,28 +467,27 @@ class Ui_Edit_1_Window(object):
 
             if item.checkState() == Qt.CheckState.Checked:
 
+                print(item)
+
                 matricula, nome_aluno = item.text().split(' - ')
                 id_aluno = obter_id_aluno_por_matricula(matricula)
 
                 if id_aluno:
 
-                    executar_query("DELETE FROM certidao WHERE id_aluno = %s",[id_aluno])
-                    executar_query("DELETE FROM dados_pais_responsavel WHERE id_aluno = %s", [id_aluno])
-                    executar_query("DELETE FROM endereco WHERE id_aluno = %s", [id_aluno])
-                    executar_query("DELETE FROM informacoes_matricula WHERE id_aluno = %s", [id_aluno])
-                    executar_query("DELETE FROM saude WHERE id_aluno = %s", [id_aluno])
-                    executar_query("DELETE FROM identificacao_aluno WHERE id_aluno = %s", [id_aluno])
+                    executar_query_freq("DELETE FROM certidao WHERE id_aluno = %s",[id_aluno])
+                    executar_query_freq("DELETE FROM dados_pais_responsavel WHERE id_aluno = %s", [id_aluno])
+                    executar_query_freq("DELETE FROM endereco WHERE id_aluno = %s", [id_aluno])
+                    executar_query_freq("DELETE FROM informacoes_matricula WHERE id_aluno = %s", [id_aluno])
+                    executar_query_freq("DELETE FROM saude WHERE id_aluno = %s", [id_aluno])
+                    executar_query_freq("DELETE FROM identificacao_aluno WHERE id_aluno = %s", [id_aluno])
 
                 else:
                     print(f"Não foi possível encontrar o ID para a matrícula {matricula}")
 
             else:
+                print(f"Item não selecionado")
 
-                print(f"Nenhum item selecionado")
-
-            self.atualizar_lista()
-
-
+        self.atualizar_lista()
 
 if __name__ == "__main__":
     import sys

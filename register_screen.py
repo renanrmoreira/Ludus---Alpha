@@ -1,11 +1,15 @@
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtWidgets import QMessageBox
+from PyQt6.QtCore import Qt
 from database import insert_cadastro_sistema, verifica_login
 
 class Ui_RegisterUserWindow():
     def setupUi(self, RegisterUserWindow):
         RegisterUserWindow.setObjectName("RegisterUserWindow")
         RegisterUserWindow.resize(467, 112)
+        RegisterUserWindow.setMinimumSize(467, 112)
+        RegisterUserWindow.setMaximumSize(467, 112)
+        RegisterUserWindow.setWindowFlags(RegisterUserWindow.windowFlags() & ~Qt.WindowType.WindowMaximizeButtonHint)
         self.centralwidget = QtWidgets.QWidget(parent=RegisterUserWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.nome_prof = QtWidgets.QLineEdit(parent=self.centralwidget)
@@ -22,6 +26,7 @@ class Ui_RegisterUserWindow():
         self.senha.setGeometry(QtCore.QRect(10, 50, 281, 17))
         self.senha.setText("")  
         self.senha.setObjectName("senha")
+        self.senha.setEchoMode(QtWidgets.QLineEdit.EchoMode.Password)
         
         self.confirmar_button = QtWidgets.QPushButton(parent=self.centralwidget, clicked = lambda: self.cadastrar_sistema(RegisterUserWindow))
         self.confirmar_button.setGeometry(QtCore.QRect(330, 10, 75, 23))

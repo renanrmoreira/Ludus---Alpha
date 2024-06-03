@@ -1,9 +1,12 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtGui import QIcon
-from PyQt6.QtCore import QCoreApplication, QSettings
+from PyQt6.QtCore import QCoreApplication, QSettings, Qt
+
+
 from register_screen import *
 from database import realiza_login,busca_nome_usuario
 from home_screen import Ui_MainWindow
+
 
 QCoreApplication.setOrganizationName("LUDUS")
 QCoreApplication.setApplicationName("LUDUS-App")
@@ -13,6 +16,9 @@ class Ui_Login_Win(object):
     def setupUi(self, Login_Win):
         Login_Win.setObjectName("Login_Win")
         Login_Win.resize(640, 480)
+        Login_Win.setMinimumSize(640, 480)
+        Login_Win.setMaximumSize(640, 480)
+        Login_Win.setWindowFlags(Login_Win.windowFlags() & ~Qt.WindowType.WindowMaximizeButtonHint)
         Login_Win.setStyleSheet("background-color: rgb(243, 230, 213);")
         self.centralwidget = QtWidgets.QWidget(parent=Login_Win)
         self.centralwidget.setObjectName("centralwidget")
@@ -21,27 +27,44 @@ class Ui_Login_Win(object):
         
         self.cadastrar_button = QtWidgets.QPushButton(parent=self.centralwidget, clicked = lambda: self.openCadastro())
         self.cadastrar_button.setGeometry(QtCore.QRect(200, 320, 106, 31))
-        self.cadastrar_button.setStyleSheet("background-color:  rgb(45, 84, 60);\n"
-"border-width: 2px;\n"
-"border-radius: 10px;\n"
-"font:bold 14px \"Inter Black\" ;\n"
-"min-width: 90px;\n"
-"padding: 6px;\n"
-"color: rgb(243, 230, 213);\n"
-"")
+    
+        self.cadastrar_button.setStyleSheet("""
+    QPushButton {
+        background-color: rgb(45, 84, 60);
+        border-width: 2px;
+        border-radius: 10px;
+        font: bold 14px "Inter Black";
+        min-width: 90px;
+        padding: 6px;
+        color: rgb(243, 230, 213);                                  
+    }
+    QPushButton:hover {
+        background-color: rgb(65, 104, 80);
+    }
+""")
+
         self.cadastrar_button.setObjectName("cadastrar_button")
+        self.cadastrar_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         
         self.login_button = QtWidgets.QPushButton(parent=self.centralwidget, clicked = lambda: self.logar())
         self.login_button.setGeometry(QtCore.QRect(320, 320, 106, 31))
-        self.login_button.setStyleSheet("background-color: rgb(131, 3, 2);;\n"
-"border-width: 2px;\n"
-"border-radius: 10px;\n"
-"font:bold 14px \"Inter Black\" ;\n"
-"min-width: 90px;\n"
-"padding: 6px;\n"
-"color: rgb(243, 230, 213);\n"
-"")
+
+        self.login_button.setStyleSheet("""
+    QPushButton {
+        background-color: rgb(131, 3, 2);
+        border-width: 2px;
+        border-radius: 10px;
+        font: bold 14px "Inter Black";
+        min-width: 90px;
+        padding: 6px;
+        color: rgb(243, 230, 213);                                  
+    }
+    QPushButton:hover {
+        background-color: rgb(151, 23, 22);
+    }
+""")
         self.login_button.setObjectName("login_button")
+        self.login_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         
         self.LUDUS_logo = QtWidgets.QLabel(parent=self.centralwidget)
         self.LUDUS_logo.setGeometry(QtCore.QRect(120, 110, 405, 120))

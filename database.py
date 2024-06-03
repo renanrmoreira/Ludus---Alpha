@@ -19,21 +19,31 @@ def connect_db():
     except Exception as e:
         print(f"Um erro inesperado ocorreu: {e}")
     
-def executar_query(query, parametros):
+def executar_query(conn, query, parametros):
+    try:
+        with conn.cursor() as cur:
+            cur.execute(query, parametros)
+            return True
+    except psycopg2.Error as e:
+        print(f"Falha ao executar query: {str(e)}")
+        return False
+    
+def executar_query_realiza_freq(query, parametros):
     conn = connect_db()
     if conn is not None:
         try:
             with conn.cursor() as cur:
                 cur.execute(query, parametros)
                 conn.commit()
-                return "Query executada com sucesso"
+                return "Dados inseridos com sucesso"
         except psycopg2.Error as e:
             conn.rollback()
-            return f"Falha ao executar query: {str(e)}"
+            return f"Falha ao inserir dados: {str(e)}"
         finally:
             conn.close()
     else:
         return "Conexão com o banco de dados não foi estabelecida."
+
     
 def executar_query_freq(query, parametros):
     conn = connect_db()
@@ -50,6 +60,24 @@ def executar_query_freq(query, parametros):
         print(f"Erro ao executar query: {e}")
         conn.rollback()
         return []
+    finally:
+        cur.close()
+        conn.close()
+
+def executar_query_matricula(query, parametros):
+    conn = connect_db()
+    try:
+        cur = conn.cursor()
+        cur.execute(query, parametros)
+        if query.strip().upper().startswith('SELECT'):
+            return cur.fetchall()
+        else:
+            conn.commit()
+            return cur.rowcount
+    except Exception as e:
+        print(f"Erro ao executar query: {e}")
+        conn.rollback()
+        return None
     finally:
         cur.close()
         conn.close()
@@ -76,86 +104,103 @@ def last_id():
         return None
 
 def insert_cadastro_sistema(login,nome_prof,senha):
+
+    print(login)
+    print(nome_prof)
+    print(senha)
+
     query = """INSERT INTO usuarios (login, nome_professor, senha) VALUES (%s, %s, %s)"""
 
     parametros = (login, nome_prof, senha)
-    return executar_query(query, parametros)
+    return executar_query_freq(query, parametros)
 
-def insert_identificacao_aluno(nis, nome_aluno, sexo_aluno, nascimento_uf, nascimento_municipio,
-                               cartorio_uf, nome_cartorio, cartorio_municipio, data_exp_identidade,
-                               orgao_emissor, uf_identidade, cpf, raca_aluno):
-
+def insert_identificacao_aluno(conn, nis, nome_aluno, sexo_aluno, nascimento_uf, nascimento_municipio,
+                               cartorio_uf, nome_cartorio, id_doc_passaporte, data_exp_identidade,
+                               orgao_emissor, uf_identidade, cpf, raca_aluno, municipio_cartorio):
     query = """
         INSERT INTO identificacao_aluno 
         (NIS, nome_aluno, sexo, UF, local_nascimento_municipio,
-         uf_cartorio, nome_cartorio, data_expedicao_identidade,
-         orgao_emissor, uf_identidade, cpf, aluno_raca, municipio_cartório)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+         uf_cartorio, nome_cartorio, identidade_docEstrangeiro_passaporte, data_expedicao_identidade,
+         orgao_emissor, uf_identidade, cpf, aluno_raca, municipio_cartorio)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        RETURNING id_aluno;
     """
     parametros = (nis, nome_aluno, sexo_aluno, nascimento_uf, nascimento_municipio,
-              cartorio_uf, nome_cartorio, data_exp_identidade,
-              orgao_emissor, uf_identidade, cpf, raca_aluno, cartorio_municipio)
-    return executar_query(query, parametros)
+                  cartorio_uf, nome_cartorio, id_doc_passaporte, data_exp_identidade,
+                  orgao_emissor, uf_identidade, cpf, raca_aluno, municipio_cartorio)
+    
+    cur = conn.cursor()
+    cur.execute(query, parametros)
+    id_aluno = cur.fetchone()[0]
+    cur.close()
+    return id_aluno
 
 
-def insert_certidao(num_matricula_registro_civil, num_termo, livro, folha, data_expedicao_certidao):
 
+def insert_certidao(conn, id_aluno, num_matricula_registro_civil, num_termo, livro, folha, data_expedicao_certidao):
     query = """
         INSERT INTO certidao 
         (id_aluno, num_matricula_registro_civil, num_termo, livro, folha, data_expedicao_certidao)
-        VALUES ( %s, %s, %s, %s, %s,%s)
+        VALUES (%s, %s, %s, %s, %s, %s)
     """
-    parametros = (last_id(), num_matricula_registro_civil, num_termo, livro, folha, data_expedicao_certidao)
-    return executar_query(query, parametros)
+    parametros = (id_aluno, num_matricula_registro_civil, num_termo, livro, folha, data_expedicao_certidao)
+    return executar_query(conn, query, parametros)
 
 
-def insert_saude(autismo, rett, asperger, transtorno_desintegrativo,
+def insert_saude(conn, id_aluno, autismo, rett, asperger, transtorno_desintegrativo,
                  baixa_visao, cegueira, auditiva, intelectual, fisica,
                  multipla, sindrome_down, surdez, surdocegueira, altas_habilidades):
     query = """
         INSERT INTO saude (id_aluno, autismo, rett, asperger, transtorno_desintegrativo,
-                                       baixa_visao, cegueira, auditiva, intelectual, fisica,
-                                       multipla, sindrome_down, surdez, surdocegueira, altas_habilidades)
-                    VALUES (%s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                           baixa_visao, cegueira, auditiva, intelectual, fisica,
+                           multipla, sindrome_down, surdez, surdocegueira, altas_habilidades)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
-    parametros = (last_id(),autismo, rett, asperger, transtorno_desintegrativo,
-                      baixa_visao, cegueira, auditiva, intelectual, fisica,
-                      multipla, sindrome_down, surdez, surdocegueira, altas_habilidades)
-    return executar_query(query, parametros)
+    parametros = (id_aluno, autismo, rett, asperger, transtorno_desintegrativo,
+                  baixa_visao, cegueira, auditiva, intelectual, fisica,
+                  multipla, sindrome_down, surdez, surdocegueira, altas_habilidades)
+    
+    print("Debugging insert_saude:", id_aluno, autismo, rett, asperger, transtorno_desintegrativo,
+      baixa_visao, cegueira, auditiva, intelectual, fisica,
+      multipla, sindrome_down, surdez, surdocegueira, altas_habilidades)
+    return executar_query(conn, query, parametros)
 
 
-def insert_endereco(endereco, complemento, numero_endereco, municipio, bairro, cep, zona, telefone, email, uf):
 
+
+def insert_endereco(conn, id_aluno, endereco, complemento, numero_endereco, municipio, bairro, cep, zona, telefone, email, uf):
     query = """
-        INSERT INTO endereco (id_aluno, endereco, complemento, numero_endereco, municipio, bairro, cep, telefone, email, uf, zona)
+        INSERT INTO endereco (id_aluno, endereco, complemento, numero_endereco, municipio, bairro, cep, zona, telefone, email, uf)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
-    parametros = (last_id(),endereco, complemento, numero_endereco, municipio, bairro, cep, telefone, email, uf, zona)
-    return executar_query(query, parametros)
+    parametros = (id_aluno, endereco, complemento, numero_endereco, municipio, bairro, cep, zona, telefone, email, uf)
+    return executar_query(conn, query, parametros)
 
 
-def insert_dados_pais_responsavel(nome_mae, nome_pai):
+
+def insert_dados_pais_responsavel(conn, id_aluno, nome_mae, nome_pai):
     query = """
         INSERT INTO dados_pais_responsavel 
         (id_aluno, nome_mae, nome_pai)
         VALUES (%s, %s, %s)
     """
-    parametros = (last_id(), nome_mae, nome_pai)
-    return executar_query(query, parametros)
+    parametros = (id_aluno, nome_mae, nome_pai)
+    return executar_query(conn, query, parametros)
 
 
-def insert_informacoes_matricula(nome_escola, cod_censo, data_ingresso_escola, matricula, data_matricula,
-                                 codigo_turma, participa_programa, transporte_escolar, turno, codigo_serie, codigo_procedencia):
 
+def insert_informacoes_matricula(conn, id_aluno, nome_escola, cod_censo, data_ingresso_escola, matricula, data_matricula,
+                                 codigo_turma, participa_programa, transporte_escolar, turno, codigo_serie, codigo_procedencia, ano_letivo):
     query = """
         INSERT INTO informacoes_matricula
-        (id_aluno, nome_escola, cod_censo_inep, data_ingresso_escola, matricula, data_matricula, codigo_turma, participa_programa, transporte_escolar, turno, codigo_serie, codigo_procedencia)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        (id_aluno, nome_escola, cod_censo_inep, data_ingresso_escola, matricula, data_matricula, codigo_turma, participa_programa, transporte_escolar, turno, codigo_serie, codigo_procedencia, ano_letivo)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
-    parametros = (last_id(), nome_escola, cod_censo, data_ingresso_escola, matricula, data_matricula,
-                                 codigo_turma, participa_programa, transporte_escolar, turno, codigo_serie, codigo_procedencia)
+    parametros = (id_aluno, nome_escola, cod_censo, data_ingresso_escola, matricula, data_matricula,
+                  codigo_turma, participa_programa, transporte_escolar, turno, codigo_serie, codigo_procedencia, ano_letivo)
     
-    return executar_query(query, parametros)
+    return executar_query(conn, query, parametros)
+
 
 def checa_matricula(matricula):
     query = """
@@ -164,7 +209,9 @@ def checa_matricula(matricula):
         WHERE matricula = %s
     """
     parametros = (matricula,)
-    return executar_query_freq(query, parametros)
+    resultado = executar_query_matricula(query, parametros)
+    return bool(resultado)
+
 
 def insert_solicitacao_matricula(nome_aluno, matricula, codigo_turma, turno, codigo_serie, ano_letivo, documentos_pendentes):
     query = """
@@ -283,7 +330,7 @@ def realiza_freq(id_aluno, nome_aluno, matricula, data_presenca, presenca, justi
         VALUES (%s, %s, %s, %s, %s, %s, %s);
     """
     parametros = (id_aluno, nome_aluno, matricula, data_presenca, presenca, justificativa, observacoes)
-    executar_query(query,parametros)
+    executar_query_realiza_freq(query, parametros)
 
 def obter_frequencias_por_turma(codigo_serie):
     query = """

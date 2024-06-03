@@ -6,7 +6,7 @@ CREATE TABLE identificacao_aluno (
     UF VARCHAR(2),
     local_nascimento_municipio VARCHAR(100),
     uf_cartorio VARCHAR(2),
-    municipio_cartório VARCHAR(100),
+    municipio_cartorio VARCHAR(100),
     nome_cartorio VARCHAR(100),
     identidade_docEstrangeiro_passaporte VARCHAR(100),
     data_expedicao_identidade DATE,
@@ -87,6 +87,8 @@ CREATE TABLE informacoes_matricula (
     transporte_escolar BOOLEAN,
     FOREIGN KEY (id_aluno) REFERENCES identificacao_aluno(id_aluno)
 );
+
+ALTER TABLE informacoes_matricula ADD COLUMN ano_letivo INT;
 
 CREATE TABLE frequencia (
     id_frequencia SERIAL PRIMARY KEY,

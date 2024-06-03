@@ -9,6 +9,9 @@ class UI_FrequenciaWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1280, 720)
+        MainWindow.setMinimumSize(1280, 720)
+        MainWindow.setMaximumSize(1280, 720)
+        MainWindow.setWindowFlags(MainWindow.windowFlags() & ~Qt.WindowType.WindowMaximizeButtonHint)
         MainWindow.setStyleSheet("background-color: rgb(243, 230, 213);\n"
 "\n"
 "")

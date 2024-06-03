@@ -1,6 +1,7 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtWidgets import QMessageBox
 from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import Qt
 from database import listar_frequencias_por_turma_ano
 import csv
 import os
@@ -10,6 +11,9 @@ class Ui_RelatorioWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1280, 720)
+        MainWindow.setMinimumSize(1280, 720)
+        MainWindow.setMaximumSize(1280, 720)
+        MainWindow.setWindowFlags(MainWindow.windowFlags() & ~Qt.WindowType.WindowMaximizeButtonHint)
         MainWindow.setStyleSheet("background-color: rgb(243, 230, 213);\n"
 "\n"
 "")
@@ -195,6 +199,7 @@ class Ui_RelatorioWindow(object):
 "padding: 6px;\n"
 "color: rgb(243, 230, 213);")
         self.refresh_button_2.setObjectName("refresh_button_2")
+        self.refresh_button_2.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
