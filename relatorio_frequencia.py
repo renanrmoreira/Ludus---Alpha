@@ -6,7 +6,6 @@ from database import listar_frequencias_por_turma_ano
 import csv
 import os
 
-
 class Ui_RelatorioWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -67,20 +66,7 @@ class Ui_RelatorioWindow(object):
         self.turma_selection.addItem("21. 2° Ano")
         self.turma_selection.addItem("22. 3° Ano")
         self.turma_selection.addItem("23. 4° Ano")
-        self.confirm_button = QtWidgets.QPushButton(parent=self.centralwidget, clicked = lambda: self.voltar_menu())
-        self.confirm_button.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
-        self.confirm_button.setGeometry(QtCore.QRect(1076, 20, 136, 71))
-        self.confirm_button.setStyleSheet("background-color:rgb(44, 46, 89);\n"
-"border-style: outset;\n"
-"border-width: 2px;\n"
-"border-radius: 10px;\n"
-"border-color: black;\n"
-"font:bold 20px \"Inter Black\" ;\n"
-"min-width: 5em;\n"
-"padding: 6px;\n"
-"color: rgb(243, 230, 213);\n"
-"")
-        self.confirm_button.setObjectName("confirm_button")
+        
         self.tableWidget = QtWidgets.QTableWidget(parent=self.centralwidget)
         self.tableWidget.setGeometry(QtCore.QRect(60, 160, 1161, 531))
         font = QtGui.QFont()
@@ -210,7 +196,7 @@ class Ui_RelatorioWindow(object):
         MainWindow.setWindowTitle(_translate("MainWindow", "Relatorio das Frequências"))
         self.title_label.setText(_translate("MainWindow", "<html><head/><body><p align=\"center\">Relatorio de classe</p></body></html>"))
 
-        self.confirm_button.setText(_translate("MainWindow", "Confirmar"))
+        
         self.tableWidget.setSortingEnabled(True)
         item = self.tableWidget.verticalHeaderItem(0)
         item.setText(_translate("MainWindow", "1"))
